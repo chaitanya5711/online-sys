@@ -1126,3 +1126,23 @@ button:disabled {
     }
 
 }
+
+
+/* ================================
+   QUIZ RESULT - PASS / FAIL
+================================ */
+
+#result-message {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 15px 0 25px;
+}
+
+#result-message.pass {
+    color: #16a34a;
+}
+
+#result-message.fail {
+    color: #dc2626;
+}
+
