@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Online Quiz</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="quiz-page">
+
+        <div class="quiz-container">
+
+            <!-- HEADER -->
+
+            <header class="quiz-header">
+
+                <div class="quiz-heading">
+
+                    <h1 id="quiz-title">
+                        Online Quiz
+                    </h1>
+
+                    <p id="student-name">
+                        Student
+                    </p>
+
+                </div>
+
+                <div class="quiz-timer">
+
+                    <span>
+                        Time Remaining
+                    </span>
+
+                    <strong id="timer">
+                        60s
+                    </strong>
+
+                </div>
+
+            </header>
+
+
+            <!-- MAIN AREA -->
+
+            <div class="quiz-main">
+
+
+                <!-- SIDEBAR -->
+
+                <aside class="question-sidebar">
+
+                    <h3>
+                        Questions
+                    </h3>
+
+                    <div class="question-legend">
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot current-dot"></span>
+
+                            Current
+
+                        </div>
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot answered-dot"></span>
+
+                            Answered
+
+                        </div>
+
+                        <div class="legend-item">
+
+                            <span class="legend-dot unanswered-dot"></span>
+
+                            Unanswered
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="question-navigation"
+                        class="question-navigation"
+                    >
+
+                    </div>
+
+                </aside>
+
+
+                <!-- QUESTION AREA -->
+
+                <main class="question-area">
+
+                    <div class="question-top">
+
+                        <span id="question-number">
+                            Question 1 of 1
+                        </span>
+
+                    </div>
+
+
+                    <div class="question-container">
+
+                        <h2 id="question">
+                            Loading question...
+                        </h2>
+
+                        <div id="options">
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PREVIOUS / NEXT -->
+
+                    <div class="quiz-navigation">
+
+                        <button
+                            id="previous-btn"
+                            type="button"
+                            onclick="previousQuestion()"
+                        >
+                            ← Previous
+                        </button>
+
+                        <button
+                            id="next-btn"
+                            type="button"
+                            onclick="nextQuestion()"
+                        >
+                            Next →
+                        </button>
+
+                    </div>
+
+
+                    <!-- PREVIEW / END -->
+
+                    <div class="quiz-actions">
+
+                        <button
+                            id="preview-btn"
+                            type="button"
+                            onclick="showPreview()"
+                        >
+                            Preview
+                        </button>
+
+                        <button
+                            id="end-btn"
+                            type="button"
+                            onclick="endTest()"
+                        >
+                            End Test
+                        </button>
+
+                    </div>
+
+                </main>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PREVIEW MODAL -->
+
+    <div
+        id="preview-modal"
+        class="modal-overlay"
+    >
+
+        <div class="preview-modal">
+
+            <div class="preview-header">
+
+                <div>
+
+                    <h2>
+                        Test Preview
+                    </h2>
+
+                    <p>
+                        Review your answers before submitting.
+                    </p>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="close-modal"
+                    onclick="closePreview()"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                id="preview-summary"
+                class="preview-summary"
+            >
+            </div>
+
+
+            <div
+                id="preview-questions"
+                class="preview-questions"
+            >
+            </div>
+
+
+            <div class="preview-actions">
+
+                <button
+                    type="button"
+                    class="continue-btn"
+                    onclick="closePreview()"
+                >
+                    Continue Test
+                </button>
+
+                <button
+                    type="button"
+                    class="submit-btn"
+                    onclick="submitFromPreview()"
+                >
+                    Submit Test
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="../js/quiz.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Teacher Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <div class="dashboard-header">
+
+            <div>
+
+                <h1>Teacher Dashboard</h1>
+
+                <p id="teacher-name"></p>
+
+            </div>
+
+            <button onclick="logout()">
+                Logout
+            </button>
+
+        </div>
+
+
+        <div class="dashboard-content">
+
+            <h2>Quiz Management</h2>
+
+
+            <!-- Create Quiz -->
+
+            <div class="dashboard-card">
+
+                <h3>Create New Quiz</h3>
+
+                <input
+                    type="text"
+                    id="quiz-title"
+                    placeholder="Enter quiz title"
+                >
+
+                <textarea
+                    id="quiz-description"
+                    placeholder="Enter quiz description"
+                ></textarea>
+
+                <input
+                    type="number"
+                    id="quiz-duration"
+                    placeholder="Duration in seconds"
+                    min="10"
+                >
+
+                <button onclick="createQuiz()">
+                    Create Quiz
+                </button>
+
+                <p id="create-message"></p>
+
+            </div>
+
+
+            <!-- Excel Upload -->
+
+            <div class="dashboard-card">
+
+                <h3>Upload Quiz Questions</h3>
+
+                <p>
+                    First select the quiz, then upload the Excel file.
+                </p>
+
+                <select id="upload-quiz">
+
+                    <option value="">
+                        Select Quiz
+                    </option>
+
+                </select>
+
+                <input
+                    type="file"
+                    id="excel-file"
+                    accept=".xlsx,.xls"
+                >
+
+                <button onclick="uploadExcel()">
+                    Upload Excel
+                </button>
+
+                <p id="upload-message"></p>
+
+            </div>
+
+
+            <!-- Available Quizzes -->
+
+            <div class="dashboard-card">
+
+                <h3>Available Quizzes</h3>
+
+                <div id="quiz-list">
+
+                    <p>
+                        Loading quizzes...
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="../js/teacher.js"></script>
+
+</body>
+
+</html>

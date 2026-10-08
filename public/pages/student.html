@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Student Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="dashboard-page">
+
+        <div class="dashboard-container">
+
+
+            <!-- HEADER -->
+
+            <header class="dashboard-header">
+
+                <div>
+
+                    <h1>
+                        Student Dashboard
+                    </h1>
+
+                    <p id="student-name">
+                        Welcome
+                    </p>
+
+                </div>
+
+
+                <div class="dashboard-actions">
+
+                    <button
+                        class="back-button"
+                        onclick="goToHome()"
+                    >
+                        ← Home
+                    </button>
+
+                    <button
+                        class="logout-button"
+                        onclick="logout()"
+                    >
+                        Logout
+                    </button>
+
+                </div>
+
+            </header>
+
+
+            <!-- CONTENT -->
+
+            <main class="dashboard-content">
+
+                <div class="dashboard-title">
+
+                    <div>
+
+                        <h2>
+                            Available Quizzes
+                        </h2>
+
+                        <p>
+                            Select a quiz to start your test.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- QUIZ LIST -->
+
+                <div id="quiz-list">
+
+                    <div class="loading-message">
+
+                        Loading quizzes...
+
+                    </div>
+
+                </div>
+
+            </main>
+
+        </div>
+
+    </div>
+
+
+    <script src="../js/student.js"></script>
+
+</body>
+
+</html>
