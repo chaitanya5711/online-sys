@@ -1,3 +1,4 @@
+
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2");
@@ -30,12 +31,31 @@ app.use(
 
 
 // =========================
-// MySQL Connection
+// Database Configuration
 // =========================
 
-const db = mysql.createConnection({
+console.log("=================================");
+console.log("DATABASE CONFIGURATION");
+console.log("=================================");
+
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_PORT:", process.env.DB_PORT);
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_NAME:", process.env.DB_NAME);
+console.log("DB_PASSWORD: [HIDDEN]");
+
+console.log("=================================");
+
+
+// =========================
+// MySQL Connection Pool
+// =========================
+
+const db = mysql.createPool({
 
     host: process.env.DB_HOST,
+
+    port: Number(process.env.DB_PORT),
 
     user: process.env.DB_USER,
 
@@ -43,30 +63,95 @@ const db = mysql.createConnection({
 
     database: process.env.DB_NAME,
 
-    port: Number(process.env.DB_PORT)
+    waitForConnections: true,
+
+    connectionLimit: 10,
+
+    queueLimit: 0,
+
+    connectTimeout: 20000
 
 });
 
 
-db.connect(
-    (err) => {
+// =========================
+// Test Database Connection
+// =========================
 
-        if (err) {
+db.getConnection((err, connection) => {
 
-            console.error(
-                "MySQL connection error:",
-                err.message
-            );
+    if (err) {
 
-            return;
-        }
-
-        console.log(
-            "MySQL connected successfully."
+        console.error(
+            "MYSQL CONNECTION ERROR:",
+            err.message
         );
 
+        return;
     }
-);
+
+    console.log(
+        "MySQL connection established successfully."
+    );
+
+
+    // Check which database Render is actually using
+
+    connection.query(
+        "SELECT DATABASE() AS current_database",
+        (err, results) => {
+
+            if (err) {
+
+                console.error(
+                    "DATABASE CHECK ERROR:",
+                    err.message
+                );
+
+            } else {
+
+                console.log(
+                    "CURRENT DATABASE:",
+                    results[0].current_database
+                );
+
+            }
+
+
+            // Check available tables
+
+            connection.query(
+                "SHOW TABLES",
+                (err, results) => {
+
+                    if (err) {
+
+                        console.error(
+                            "SHOW TABLES ERROR:",
+                            err.message
+                        );
+
+                    } else {
+
+                        console.log(
+                            "TABLES AVAILABLE IN DATABASE:"
+                        );
+
+                        console.log(
+                            results
+                        );
+
+                    }
+
+                    connection.release();
+
+                }
+            );
+
+        }
+    );
+
+});
 
 
 // =========================
@@ -250,7 +335,8 @@ app.post(
                     return res.status(500).json({
 
                         message:
-                            "Server error."
+                            "Server error: " +
+                            err.message
 
                     });
 
@@ -1120,3 +1206,4 @@ app.listen(
 
     }
 );
+
