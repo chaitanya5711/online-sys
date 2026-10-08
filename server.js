@@ -43,7 +43,7 @@ const db = mysql.createConnection({
 
     database: process.env.DB_NAME,
 
-    port: process.env.DB_PORT
+    port: Number(process.env.DB_PORT)
 
 });
 
@@ -55,7 +55,7 @@ db.connect(
 
             console.error(
                 "MySQL connection error:",
-                err
+                err.message
             );
 
             return;
@@ -145,7 +145,7 @@ app.get(
 
                     console.error(
                         "Get questions error:",
-                        err
+                        err.message
                     );
 
                     return res.status(500).json({
@@ -244,7 +244,7 @@ app.post(
 
                     console.error(
                         "Teacher login error:",
-                        err
+                        err.message
                     );
 
                     return res.status(500).json({
@@ -275,7 +275,7 @@ app.post(
 
                     success: true,
 
-                    user:
+                    teacher:
                         results[0]
 
                 });
@@ -326,13 +326,14 @@ app.post(
 
                     console.error(
                         "Student login error:",
-                        err
+                        err.message
                     );
 
                     return res.status(500).json({
 
                         message:
-                            "Server error."
+                            "Server error: " +
+                            err.message
 
                     });
 
@@ -357,7 +358,7 @@ app.post(
 
                     success: true,
 
-                    user:
+                    student:
                         results[0]
 
                 });
@@ -399,7 +400,7 @@ app.get(
 
                     console.error(
                         "Get quizzes error:",
-                        err
+                        err.message
                     );
 
                     return res.status(500).json({
@@ -480,7 +481,7 @@ app.post(
 
                     console.error(
                         "Create quiz error:",
-                        err
+                        err.message
                     );
 
                     return res.status(500).json({
@@ -762,7 +763,7 @@ app.post(
 
                                 console.error(
                                     "Insert question error:",
-                                    err
+                                    err.message
                                 );
 
 
@@ -795,7 +796,7 @@ app.post(
 
             console.error(
                 "Excel processing error:",
-                error
+                error.message
             );
 
 
@@ -891,7 +892,7 @@ app.put(
 
                     console.error(
                         "Update question error:",
-                        err
+                        err.message
                     );
 
 
@@ -964,7 +965,7 @@ app.delete(
 
                     console.error(
                         "Delete question error:",
-                        err
+                        err.message
                     );
 
 
@@ -1072,7 +1073,7 @@ app.post(
 
                     console.error(
                         "Save result error:",
-                        err
+                        err.message
                     );
 
 
