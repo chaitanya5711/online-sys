@@ -1095,102 +1095,333 @@ app.delete(
 );
 
 
+
+ // =========================
+// Save Quiz Result and Answers
 // =========================
-// Save Quiz Result
-// =========================
 
-app.post(
-    "/api/results",
-    (req, res) => {
+app.post("/api/results", (req, res) => {
+    const {
+        student_id,
+        quiz_id,
+        score,
+        total_questions,
+        duration_seconds = 0,
+        answers
+    } = req.body;
 
-        const {
-            student_id,
-            quiz_id,
-            score,
-            total_questions
-        } = req.body;
+    if (!student_id || !quiz_id) {
+        return res.status(400).json({
+            message: "Student ID and quiz ID are required."
+        });
+    }
 
+    const hasAnswers = Array.isArray(answers);
 
-        if (
-            !student_id ||
-            !quiz_id ||
-            score === undefined ||
-            !total_questions
-        ) {
+    db.query(
+        "SELECT id, correct_answer FROM questions WHERE quiz_id = ? ORDER BY id",
+        [quiz_id],
+        (err, questions) => {
+            if (err) {
+                console.error("Question lookup error:", err.message);
+                return res.status(500).json({
+                    message: "Failed to validate quiz answers."
+                });
+            }
 
-            return res.status(400).json({
+            if (questions.length === 0) {
+                return res.status(400).json({
+                    message: "This quiz has no questions."
+                });
+            }
 
-                message:
-                    "All result fields are required."
+            let finalScore;
+            let finalTotal;
+            let answerRecords = [];
 
-            });
+            if (hasAnswers) {
+                const questionMap = new Map(
+                    questions.map(q => [
+                        String(q.id),
+                        String(q.correct_answer).trim()
+                    ])
+                );
 
-        }
+                const seen = new Set();
 
+                for (const item of answers) {
+                    if (!item || item.question_id == null) continue;
 
-        const sql = `
-            INSERT INTO quiz_results
-            (
-                student_id,
-                quiz_id,
-                score,
-                total_questions
-            )
-            VALUES (?, ?, ?, ?)
-        `;
+                    const questionId = String(item.question_id);
 
+                    if (
+                        !questionMap.has(questionId) ||
+                        seen.has(questionId)
+                    ) {
+                        continue;
+                    }
 
-        db.query(
-            sql,
-            [
+                    seen.add(questionId);
 
-                student_id,
+                    const selected =
+                        item.selected_answer == null
+                            ? null
+                            : String(item.selected_answer).trim();
 
-                quiz_id,
+                    const correct =
+                        selected !== null &&
+                        selected === questionMap.get(questionId);
 
-                score,
-
-                total_questions
-
-            ],
-            (err, result) => {
-
-                if (err) {
-
-                    console.error(
-                        "Save result error:",
-                        err.message
-                    );
-
-
-                    return res.status(500).json({
-
-                        message:
-                            "Failed to save quiz result."
-
+                    answerRecords.push({
+                        question_id: Number(questionId),
+                        selected_answer: selected,
+                        is_correct: correct
                     });
-
                 }
 
+                finalScore = answerRecords.filter(
+                    item => item.is_correct
+                ).length;
 
-                res.json({
+                finalTotal = questions.length;
+            } else {
+                // Backward compatibility with the existing frontend.
+                if (
+                    score === undefined ||
+                    total_questions === undefined ||
+                    !Number.isFinite(Number(score)) ||
+                    !Number.isFinite(Number(total_questions)) ||
+                    Number(score) < 0 ||
+                    Number(total_questions) <= 0 ||
+                    Number(score) > Number(total_questions)
+                ) {
+                    return res.status(400).json({
+                        message: "Valid score and total questions are required."
+                    });
+                }
 
-                    success: true,
-
-                    message:
-                        "Quiz result saved successfully.",
-
-                    resultId:
-                        result.insertId
-
-                });
-
+                finalScore = Number(score);
+                finalTotal = Number(total_questions);
             }
-        );
 
-    }
-);
+            const seconds = Number(duration_seconds);
 
+            if (!Number.isFinite(seconds) || seconds < 0) {
+                return res.status(400).json({
+                    message: "Duration must be a non-negative number."
+                });
+            }
+
+            db.getConnection((connectionError, connection) => {
+                if (connectionError) {
+                    console.error("DB connection error:", connectionError.message);
+                    return res.status(500).json({
+                        message: "Could not save quiz result."
+                    });
+                }
+
+                connection.beginTransaction(transactionError => {
+                    if (transactionError) {
+                        connection.release();
+                        return res.status(500).json({
+                            message: "Could not start result transaction."
+                        });
+                    }
+
+                    const rollback = message => {
+                        connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ message });
+                        });
+                    };
+
+                    connection.query(
+                        `INSERT INTO quiz_results
+                         (student_id, quiz_id, score, total_questions, duration_seconds)
+                         VALUES (?, ?, ?, ?, ?)`,
+                        [
+                            student_id,
+                            quiz_id,
+                            finalScore,
+                            finalTotal,
+                            Math.floor(seconds)
+                        ],
+                        (insertError, result) => {
+                            if (insertError) {
+                                console.error("Save result error:", insertError.message);
+                                return rollback("Failed to save quiz result.");
+                            }
+
+                            const resultId = result.insertId;
+
+                            const saveNextAnswer = index => {
+                                if (index >= answerRecords.length) {
+                                    return connection.commit(commitError => {
+                                        if (commitError) {
+                                            console.error("Commit error:", commitError.message);
+                                            return rollback("Failed to finish saving quiz attempt.");
+                                        }
+
+                                        connection.release();
+
+                                        res.json({
+                                            success: true,
+                                            message: "Quiz result saved successfully.",
+                                            resultId,
+                                            score: finalScore,
+                                            total_questions: finalTotal,
+                                            percentage: Number(
+                                                ((finalScore / finalTotal) * 100).toFixed(2)
+                                            )
+                                        });
+                                    });
+                                }
+
+                                const item = answerRecords[index];
+
+                                connection.query(
+                                    `INSERT INTO quiz_attempt_answers
+                                     (result_id, question_id, selected_answer, is_correct)
+                                     VALUES (?, ?, ?, ?)`,
+                                    [
+                                        resultId,
+                                        item.question_id,
+                                        item.selected_answer,
+                                        item.is_correct
+                                    ],
+                                    insertAnswerError => {
+                                        if (insertAnswerError) {
+                                            console.error(
+                                                "Save answer error:",
+                                                insertAnswerError.message
+                                            );
+                                            return rollback("Failed to save individual answers.");
+                                        }
+
+                                        saveNextAnswer(index + 1);
+                                    }
+                                );
+                            };
+
+                            saveNextAnswer(0);
+                        }
+                    );
+                });
+            });
+        }
+    );
+});
+
+
+// =========================
+// Student Quiz History
+// =========================
+
+app.get("/api/history/:studentId", (req, res) => {
+    const studentId = req.params.studentId;
+
+    db.query(
+        `SELECT
+            r.id AS result_id,
+            r.quiz_id,
+            q.title AS quiz_title,
+            r.score,
+            r.total_questions,
+            ROUND(r.score * 100.0 / NULLIF(r.total_questions, 0), 2) AS percentage,
+            r.duration_seconds,
+            r.submitted_at
+         FROM quiz_results r
+         JOIN quizzes q ON q.id = r.quiz_id
+         WHERE r.student_id = ?
+         ORDER BY r.submitted_at DESC`,
+        [studentId],
+        (err, results) => {
+            if (err) {
+                console.error("Quiz history error:", err.message);
+                return res.status(500).json({
+                    message: "Failed to fetch quiz history."
+                });
+            }
+
+            res.json(results);
+        }
+    );
+});
+
+
+// =========================
+// Student Performance Analytics
+// =========================
+
+app.get("/api/analytics/:studentId", (req, res) => {
+    const studentId = req.params.studentId;
+
+    db.query(
+        `SELECT
+            COUNT(*) AS attempts,
+            COALESCE(SUM(score), 0) AS total_correct,
+            COALESCE(SUM(total_questions), 0) AS total_questions,
+            ROUND(
+                COALESCE(SUM(score), 0) * 100.0 /
+                NULLIF(SUM(total_questions), 0),
+                2
+            ) AS overall_percentage,
+            ROUND(AVG(score * 100.0 / NULLIF(total_questions, 0)), 2)
+                AS average_attempt_percentage,
+            COALESCE(MAX(duration_seconds), 0) AS longest_attempt_seconds
+         FROM quiz_results
+         WHERE student_id = ?`,
+        [studentId],
+        (err, results) => {
+            if (err) {
+                console.error("Analytics error:", err.message);
+                return res.status(500).json({
+                    message: "Failed to fetch analytics."
+                });
+            }
+
+            res.json(results[0]);
+        }
+    );
+});
+
+
+// =========================
+// Quiz Leaderboard
+// =========================
+
+app.get("/api/leaderboard/:quizId", (req, res) => {
+    const quizId = req.params.quizId;
+
+    db.query(
+        `SELECT
+            u.id AS student_id,
+            u.name AS student_name,
+            MAX(r.score) AS best_score,
+            MAX(r.total_questions) AS total_questions,
+            ROUND(
+                MAX(r.score * 100.0 / NULLIF(r.total_questions, 0)),
+                2
+            ) AS percentage
+         FROM quiz_results r
+         JOIN users u ON u.id = r.student_id
+         WHERE r.quiz_id = ?
+         GROUP BY u.id, u.name
+         ORDER BY best_score DESC, percentage DESC, u.name ASC
+         LIMIT 100`,
+        [quizId],
+        (err, results) => {
+            if (err) {
+                console.error("Leaderboard error:", err.message);
+                return res.status(500).json({
+                    message: "Failed to fetch leaderboard."
+                });
+            }
+
+            res.json(results);
+        }
+    );
+});
 
 // =========================
 // Start Server
