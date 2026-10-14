@@ -1,168 +1,122 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-
-    <link
-        rel="stylesheet"
-        href="../css/style.css"
-    >
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
-
     <div class="dashboard-page">
-
         <div class="dashboard-container">
 
-            <!-- HEADER -->
-
             <header class="dashboard-header">
-
                 <div>
                     <h1>Student Dashboard</h1>
-
-                    <p id="student-name">
-                        Welcome
-                    </p>
+                    <p id="student-name">Welcome</p>
                 </div>
-
                 <div class="dashboard-actions">
-
-                    <button
-                        class="back-button"
-                        onclick="goToHome()"
-                    >
-                        ← Home
-                    </button>
-
-                    <button
-                        class="logout-button"
-                        onclick="logout()"
-                    >
-                        Logout
-                    </button>
-
+                    <button class="back-button" onclick="goToHome()">← Home</button>
+                    <button class="logout-button" onclick="logout()">Logout</button>
                 </div>
-
             </header>
-
-            <!-- CONTENT -->
 
             <main class="dashboard-content">
 
-                <!-- AVAILABLE QUIZZES HEADING -->
-
-                <div class="dashboard-title">
-
-                    <div>
-                        <h2>Available Quizzes</h2>
-
-                        <p>
-                            Select a quiz to start your test.
-                        </p>
-                    </div>
-
-                </div>
-
-                <!-- STUDENT FEATURES -->
-
-                <div class="dashboard-title">
-
+                <section class="dashboard-title">
                     <div>
                         <h2>My Learning</h2>
+                        <p>Review your attempts, understand your progress, and compare your results.</p>
+                    </div>
+                </section>
 
-                        <p>
-                            Track your quiz performance and progress.
-                        </p>
+                <section class="student-feature-grid" aria-label="Student features">
+                    <button class="student-feature-card" data-panel="history-panel" aria-expanded="false">
+                        <span class="student-feature-icon">📚</span>
+                        <span class="student-feature-title">Quiz History</span>
+                        <span class="student-feature-description">Review completed quizzes, scores, and attempts.</span>
+                        <span class="student-feature-action">View history →</span>
+                    </button>
+
+                    <button class="student-feature-card" data-panel="analytics-panel" aria-expanded="false">
+                        <span class="student-feature-icon">📈</span>
+                        <span class="student-feature-title">Result Analytics</span>
+                        <span class="student-feature-description">Understand your accuracy and performance trends.</span>
+                        <span class="student-feature-action">Explore analytics →</span>
+                    </button>
+
+                    <button class="student-feature-card" data-panel="leaderboard-panel" aria-expanded="false">
+                        <span class="student-feature-icon">🏆</span>
+                        <span class="student-feature-title">Leaderboard</span>
+                        <span class="student-feature-description">Compare your best result with other students.</span>
+                        <span class="student-feature-action">View rankings →</span>
+                    </button>
+                </section>
+
+                <!-- Feature sections expand here without leaving the dashboard. -->
+                <section id="history-panel" class="student-feature-panel" hidden>
+                    <div class="feature-panel-heading">
+                        <div>
+                            <h2>Quiz History</h2>
+                            <p>Your completed quiz attempts, newest first.</p>
+                        </div>
+                        <button class="panel-close-button" data-close-panel>Close</button>
+                    </div>
+                    <div id="history-content">
+                        <p class="loading-message">Loading your quiz history...</p>
+                    </div>
+                </section>
+
+                <section id="analytics-panel" class="student-feature-panel" hidden>
+                    <div class="feature-panel-heading">
+                        <div>
+                            <h2>Result Analytics</h2>
+                            <p>Your statistics are calculated from your saved quiz attempts.</p>
+                        </div>
+                        <button class="panel-close-button" data-close-panel>Close</button>
+                    </div>
+                    <div id="analytics-content">
+                        <p class="loading-message">Loading your analytics...</p>
+                    </div>
+                </section>
+
+                <section id="leaderboard-panel" class="student-feature-panel" hidden>
+                    <div class="feature-panel-heading">
+                        <div>
+                            <h2>Quiz Leaderboard</h2>
+                            <p>Rankings are based on each student's best result for the selected quiz.</p>
+                        </div>
+                        <button class="panel-close-button" data-close-panel>Close</button>
                     </div>
 
-                </div>
+                    <div class="leaderboard-controls">
+                        <label for="leaderboard-quiz-select">Choose a quiz</label>
+                        <select id="leaderboard-quiz-select">
+                            <option value="">Loading quizzes...</option>
+                        </select>
+                    </div>
 
-                <div class="quiz-list">
+                    <div id="leaderboard-content">
+                        <p class="loading-message">Select a quiz to view rankings.</p>
+                    </div>
+                </section>
 
-                    <!-- QUIZ HISTORY -->
-
-                    <a
-                        href="history.html"
-                        class="quiz-card"
-                    >
-                        <div class="quiz-card-content">
-
-                            <h3>Quiz History</h3>
-
-                            <p class="quiz-description">
-                                Review your previous quiz attempts and scores.
-                            </p>
-
-                        </div>
-                    </a>
-
-                    <!-- RESULT ANALYTICS -->
-
-                    <a
-                        href="analytics.html"
-                        class="quiz-card"
-                    >
-                        <div class="quiz-card-content">
-
-                            <h3>Result Analytics</h3>
-
-                            <p class="quiz-description">
-                                Understand your scores and track your performance.
-                            </p>
-
-                        </div>
-                    </a>
-
-                    <!-- LEADERBOARD -->
-
-                    <a
-                        href="leaderboard.html"
-                        class="quiz-card"
-                    >
-                        <div class="quiz-card-content">
-
-                            <h3>Leaderboard</h3>
-
-                            <p class="quiz-description">
-                                Compare your scores with other students.
-                            </p>
-
-                        </div>
-                    </a>
-
-                </div>
-
-                <!-- QUIZ LIST -->
+                <section class="dashboard-title available-quizzes-heading">
+                    <div>
+                        <h2>Available Quizzes</h2>
+                        <p>Choose a quiz to test your knowledge.</p>
+                    </div>
+                </section>
 
                 <div id="quiz-list">
-
-                    <div class="loading-message">
-                        Loading quizzes...
-                    </div>
-
+                    <p class="loading-message">Loading quizzes...</p>
                 </div>
 
             </main>
-
         </div>
-
     </div>
 
-    <!-- EXISTING STUDENT JAVASCRIPT -->
-
     <script src="../js/student.js"></script>
-
 </body>
-
 </html>
