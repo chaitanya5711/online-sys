@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <div class="dashboard-page">
+        <div class="dashboard-container">
+
+            <header class="dashboard-header">
+                <div>
+                    <h1>Leaderboard</h1>
+                    <p>Compare scores with other students.</p>
+                </div>
+
+                <div class="dashboard-actions">
+                    <button class="back-button"
+                        onclick="window.location.href='student.html'">
+                        ← Dashboard
+                    </button>
+                </div>
+            </header>
+
+            <main class="dashboard-content">
+                <div class="dashboard-title">
+                    <div>
+                        <h2>Quiz Rankings</h2>
+                        <p>Select a quiz to view student rankings.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="quiz-select">Choose Quiz</label>
+                    <select id="quiz-select">
+                        <option value="">Loading quizzes...</option>
+                    </select>
+                </div>
+
+                <div id="leaderboard-content">
+                    <p class="loading-message">
+                        Select a quiz to view its leaderboard.
+                    </p>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+    <script>
+    const userData = localStorage.getItem("user");
+
+    if (!userData) {
+        window.location.href = "login.html";
+    } else {
+        const quizSelect = document.getElementById("quiz-select");
+        const leaderboardContent =
+            document.getElementById("leaderboard-content");
+
+        async function loadQuizzes() {
+            try {
+                const response = await fetch("/api/quizzes");
+
+                if (!response.ok) {
+                    throw new Error("Could not load quizzes.");
+                }
+
+                const quizzes = await response.json();
+
+                quizSelect.innerHTML =
+                    '<option value="">Select a quiz</option>';
+
+                quizzes.forEach(quiz => {
+                    const option = document.createElement("option");
+                    option.value = quiz.id;
+                    option.textContent = quiz.title;
+                    quizSelect.appendChild(option);
+                });
+
+                if (!quizzes.length) {
+                    quizSelect.innerHTML =
+                        '<option value="">No quizzes available</option>';
+                }
+
+            } catch (error) {
+                quizSelect.innerHTML =
+                    '<option value="">Unable to load quizzes</option>';
+                leaderboardContent.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Unable to load quizzes</h3>
+                        <p>Please try again later.</p>
+                    </div>`;
+                console.error(error);
+            }
+        }
+
+        async function loadLeaderboard(quizId) {
+            if (!quizId) {
+                leaderboardContent.innerHTML = `
+                    <p class="loading-message">
+                        Select a quiz to view its leaderboard.
+                    </p>`;
+                return;
+            }
+
+            leaderboardContent.innerHTML =
+                '<p class="loading-message">Loading leaderboard...</p>';
+
+            try {
+                const response = await fetch(
+                    `/api/leaderboard/${encodeURIComponent(quizId)}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Could not load leaderboard.");
+                }
+
+                const data = await response.json();
+                const rankings = Array.isArray(data)
+                    ? data
+                    : (data.leaderboard || data.results || []);
+
+                if (!rankings.length) {
+                    leaderboardContent.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No results yet</h3>
+                            <p>Rankings will appear after students complete this quiz.</p>
+                        </div>`;
+                    return;
+                }
+
+                const tableRows = rankings.map((student, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHTML(
+                            student.student_name ||
+                            student.name ||
+                            student.username ||
+                            "Student"
+                        )}</td>
+                        <td>${Number(student.score ?? 0)}</td>
+                        <td>${Number(
+                            student.total_questions ??
+                            student.total ??
+                            0
+                        )}</td>
+                    </tr>
+                `).join("");
+
+                leaderboardContent.innerHTML = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Student</th>
+                                    <th>Score</th>
+                                    <th>Total Questions</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>`;
+
+            } catch (error) {
+                leaderboardContent.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Unable to load leaderboard</h3>
+                        <p>Please try again later.</p>
+                    </div>`;
+                console.error(error);
+            }
+        }
+
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[character]);
+        }
+
+        quizSelect.addEventListener("change", () => {
+            loadLeaderboard(quizSelect.value);
+        });
+
+        loadQuizzes();
+    }
+    </script>
+</body>
+</html>

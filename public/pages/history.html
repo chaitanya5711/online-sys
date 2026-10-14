@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz History</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="dashboard-page">
+        <div class="dashboard-container">
+            <header class="dashboard-header">
+                <div>
+                    <h1>Quiz History</h1>
+                    <p>Review your previous quiz attempts.</p>
+                </div>
+                <div class="dashboard-actions">
+                    <button class="back-button"
+                        onclick="window.location.href='student.html'">
+                        ← Dashboard
+                    </button>
+                </div>
+            </header>
+
+            <main class="dashboard-content">
+                <div id="history-list">
+                    <p class="loading-message">Loading quiz history...</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+    const userData = localStorage.getItem("user");
+
+    if (!userData) {
+        window.location.href = "login.html";
+    } else {
+        const user = JSON.parse(userData);
+
+        async function loadHistory() {
+            const container = document.getElementById("history-list");
+
+            try {
+                const response = await fetch(
+                    `/api/history/${encodeURIComponent(user.id)}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Could not load quiz history.");
+                }
+
+                const data = await response.json();
+                const attempts = Array.isArray(data)
+                    ? data
+                    : (data.history || data.results || []);
+
+                if (!attempts.length) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No quiz history yet</h3>
+                            <p>Complete a quiz to see your results here.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = attempts.map(item => `
+                    <div class="quiz-card">
+                        <div class="quiz-card-content">
+                            <h3>${escapeHTML(
+                                item.quiz_title || item.title || "Quiz"
+                            )}</h3>
+                            <p>Score: ${
+                                Number(item.score ?? 0)
+                            } / ${
+                                Number(item.total_questions ?? item.total ?? 0)
+                            }</p>
+                            <p>Date: ${
+                                escapeHTML(
+                                    item.created_at || item.completed_at || "N/A"
+                                )
+                            }</p>
+                        </div>
+                    </div>
+                `).join("");
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Unable to load quiz history</h3>
+                        <p>Please try again later.</p>
+                    </div>`;
+                console.error(error);
+            }
+        }
+
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[character]);
+        }
+
+        loadHistory();
+    }
+    </script>
+</body>
+</html>
