@@ -1,8 +1,8 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -16,7 +16,6 @@
         rel="stylesheet"
         href="../css/style.css"
     >
-
 </head>
 
 <body>
@@ -25,23 +24,17 @@
 
         <div class="dashboard-container">
 
-
             <!-- HEADER -->
 
             <header class="dashboard-header">
 
                 <div>
-
-                    <h1>
-                        Student Dashboard
-                    </h1>
+                    <h1>Student Dashboard</h1>
 
                     <p id="student-name">
                         Welcome
                     </p>
-
                 </div>
-
 
                 <div class="dashboard-actions">
 
@@ -63,36 +56,99 @@
 
             </header>
 
-
             <!-- CONTENT -->
 
             <main class="dashboard-content">
 
+                <!-- AVAILABLE QUIZZES HEADING -->
+
                 <div class="dashboard-title">
 
                     <div>
-
-                        <h2>
-                            Available Quizzes
-                        </h2>
+                        <h2>Available Quizzes</h2>
 
                         <p>
                             Select a quiz to start your test.
                         </p>
-
                     </div>
 
                 </div>
 
+                <!-- STUDENT FEATURES -->
+
+                <div class="dashboard-title">
+
+                    <div>
+                        <h2>My Learning</h2>
+
+                        <p>
+                            Track your quiz performance and progress.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="quiz-list">
+
+                    <!-- QUIZ HISTORY -->
+
+                    <a
+                        href="history.html"
+                        class="quiz-card"
+                    >
+                        <div class="quiz-card-content">
+
+                            <h3>Quiz History</h3>
+
+                            <p class="quiz-description">
+                                Review your previous quiz attempts and scores.
+                            </p>
+
+                        </div>
+                    </a>
+
+                    <!-- RESULT ANALYTICS -->
+
+                    <a
+                        href="analytics.html"
+                        class="quiz-card"
+                    >
+                        <div class="quiz-card-content">
+
+                            <h3>Result Analytics</h3>
+
+                            <p class="quiz-description">
+                                Understand your scores and track your performance.
+                            </p>
+
+                        </div>
+                    </a>
+
+                    <!-- LEADERBOARD -->
+
+                    <a
+                        href="leaderboard.html"
+                        class="quiz-card"
+                    >
+                        <div class="quiz-card-content">
+
+                            <h3>Leaderboard</h3>
+
+                            <p class="quiz-description">
+                                Compare your scores with other students.
+                            </p>
+
+                        </div>
+                    </a>
+
+                </div>
 
                 <!-- QUIZ LIST -->
 
                 <div id="quiz-list">
 
                     <div class="loading-message">
-
                         Loading quizzes...
-
                     </div>
 
                 </div>
@@ -103,6 +159,7 @@
 
     </div>
 
+    <!-- EXISTING STUDENT JAVASCRIPT -->
 
     <script src="../js/student.js"></script>
 
