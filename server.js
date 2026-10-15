@@ -1,15 +1,11 @@
+
+
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2");
 const multer = require("multer");
 const XLSX = require("xlsx");
 require("dotenv").config();
-const crypto = require("crypto");
-
-// Temporary teacher sessions stored by the server.
-// Restarting the server clears them, so teachers must log in again.
-const teacherSessions = new Map();
-const TEACHER_SESSION_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -131,15 +127,7 @@ app.post("/api/teacher/login", (req, res) => {
             });
         }
 
-        const token = crypto.randomBytes(32).toString("hex");
-
-        teacherSessions.set(token, {
-            role: "teacher",
-            userId: results[0].id,
-            expiresAt: Date.now() + TEACHER_SESSION_MS
-        });
-
-        return res.json({ success: true, teacher: results[0], token });
+        return res.json({ success: true, teacher: results[0] });
     });
 });
 
@@ -368,149 +356,21 @@ app.put("/api/quizzes/:id", (req, res) => {
 });
 
 // =====================================================
-// Teacher-only check (used by Delete quiz)
-// =====================================================
-
-function requireTeacher(req, res, next) {
-    const authorization = req.headers.authorization || "";
-    const token = authorization.startsWith("Bearer ")
-        ? authorization.slice(7)
-        : "";
-
-    const session = teacherSessions.get(token);
-
-    if (!session || session.role !== "teacher") {
-        return res.status(401).json({
-            message: "Please log in as a teacher to delete quizzes."
-        });
-    }
-
-    if (Date.now() > session.expiresAt) {
-        teacherSessions.delete(token);
-        return res.status(401).json({
-            message: "Your session has expired. Please log in again."
-        });
-    }
-
-    req.teacherId = session.userId;
-    next();
-}
-
-// =====================================================
 // Delete quiz
-// - Quiz with student results  -> hidden (is_active = 0), results kept
-// - Quiz with no results       -> questions and quiz deleted
 // =====================================================
 
-app.delete("/api/quizzes/:id", requireTeacher, (req, res) => {
+app.delete("/api/quizzes/:id", (req, res) => {
     const quizId = parsePositiveInteger(req.params.id);
     if (!quizId) {
         return res.status(400).json({ message: "Invalid quiz ID." });
     }
 
-    db.getConnection((connectionErr, connection) => {
-        if (connectionErr) {
-            return sendDbError(res, "Delete quiz connection error", connectionErr);
+    db.query("DELETE FROM quizzes WHERE id = ?", [quizId], (err, result) => {
+        if (err) return sendDbError(res, "Delete quiz error", err, "Failed to delete quiz.");
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Quiz not found." });
         }
-
-        connection.beginTransaction(transactionErr => {
-            if (transactionErr) {
-                connection.release();
-                return sendDbError(res, "Delete quiz transaction error", transactionErr);
-            }
-
-            const rollback = (status, message) => {
-                connection.rollback(() => {
-                    connection.release();
-                    res.status(status).json({ message });
-                });
-            };
-
-            const finish = body => {
-                connection.commit(commitErr => {
-                    if (commitErr) {
-                        console.error("Delete quiz commit error:", commitErr.message);
-                        return rollback(500, "Could not complete the operation.");
-                    }
-                    connection.release();
-                    return res.json(body);
-                });
-            };
-
-            connection.query(
-                "SELECT id FROM quizzes WHERE id = ? FOR UPDATE",
-                [quizId],
-                (quizErr, quizzes) => {
-                    if (quizErr) {
-                        console.error("Delete quiz lookup error:", quizErr.message);
-                        return rollback(500, "Could not find the quiz.");
-                    }
-                    if (!quizzes.length) {
-                        return rollback(404, "Quiz not found.");
-                    }
-
-                    // Have students already submitted this quiz?
-                    connection.query(
-                        "SELECT id FROM quiz_results WHERE quiz_id = ? LIMIT 1",
-                        [quizId],
-                        (resultsErr, attempts) => {
-                            if (resultsErr) {
-                                console.error("Delete quiz results check error:", resultsErr.message);
-                                return rollback(500, "Could not check existing quiz results.");
-                            }
-
-                            // Keep student history: hide the quiz instead of deleting it.
-                            if (attempts.length) {
-                                connection.query(
-                                    "UPDATE quizzes SET is_active = 0 WHERE id = ?",
-                                    [quizId],
-                                    updateErr => {
-                                        if (updateErr) {
-                                            console.error("Archive quiz error:", updateErr.message);
-                                            return rollback(500, "Could not remove the quiz.");
-                                        }
-                                        finish({
-                                            success: true,
-                                            archived: true,
-                                            message: "Quiz removed from the active list. Existing student results have been kept."
-                                        });
-                                    }
-                                );
-                                return;
-                            }
-
-                            // No results: delete questions, then the quiz.
-                            connection.query(
-                                "DELETE FROM questions WHERE quiz_id = ?",
-                                [quizId],
-                                questionErr => {
-                                    if (questionErr) {
-                                        console.error("Delete questions error:", questionErr.message);
-                                        return rollback(409, "The quiz cannot be deleted because related records still exist.");
-                                    }
-
-                                    connection.query(
-                                        "DELETE FROM quizzes WHERE id = ?",
-                                        [quizId],
-                                        deleteErr => {
-                                            if (deleteErr) {
-                                                console.error("Delete quiz error:", deleteErr.message);
-                                                return rollback(409, "The quiz cannot be deleted because related records still exist.");
-                                            }
-                                            finish({
-                                                success: true,
-                                                archived: false,
-                                                message: "Quiz deleted successfully."
-                                            });
-                                        }
-                                    );
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        });
+        return res.json({ success: true, message: "Quiz deleted successfully." });
     });
 });
 
@@ -977,3 +837,4 @@ app.get("/api/leaderboard/:quizId", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
