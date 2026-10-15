@@ -27,6 +27,7 @@ function logout() {
 
     localStorage.removeItem("user");
     localStorage.removeItem("selectedQuizId");
+    localStorage.removeItem("teacherToken");
 
     window.location.href = "login.html";
 }
@@ -346,8 +347,18 @@ async function loadQuizzes() {
         }
 
 
-        const quizzes =
+        const allQuizzes =
             await response.json();
+
+
+        // Hide deleted (inactive) quizzes from the teacher's list
+        // and from the Excel upload dropdown.
+        const quizzes =
+            Array.isArray(allQuizzes)
+                ? allQuizzes.filter(
+                    quiz => Number(quiz.is_active) !== 0
+                )
+                : [];
 
 
         console.log(
@@ -477,6 +488,51 @@ async function loadQuizzes() {
                 );
 
 
+                // Delete button
+                const actions =
+                    document.createElement(
+                        "div"
+                    );
+
+                actions.className =
+                    "quiz-item-actions";
+
+
+                const deleteButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                deleteButton.type = "button";
+
+                deleteButton.className =
+                    "danger-btn";
+
+                deleteButton.textContent =
+                    "Delete";
+
+
+                deleteButton.addEventListener(
+                    "click",
+                    function () {
+                        deleteQuiz(
+                            quiz.id,
+                            quiz.title,
+                            deleteButton
+                        );
+                    }
+                );
+
+
+                actions.appendChild(
+                    deleteButton
+                );
+
+                card.appendChild(
+                    actions
+                );
+
+
                 quizList.appendChild(
                     card
                 );
@@ -495,6 +551,92 @@ async function loadQuizzes() {
         quizList.innerHTML =
             "<p>Unable to load quizzes.</p>";
 
+    }
+}
+
+
+// =========================
+// Delete Quiz
+// =========================
+
+async function deleteQuiz(quizId, quizTitle, button) {
+
+    const confirmed =
+        window.confirm(
+            `Are you sure you want to delete "${quizTitle}"?`
+        );
+
+    if (!confirmed) return;
+
+
+    button.disabled = true;
+    button.textContent = "Deleting...";
+
+
+    try {
+
+        const token =
+            localStorage.getItem("teacherToken");
+
+
+        const response =
+            await fetch(
+                `/api/quizzes/${encodeURIComponent(quizId)}`,
+                {
+                    method: "DELETE",
+
+                    headers: {
+                        Authorization: `Bearer ${token || ""}`
+                    }
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                data.message ||
+                "Failed to delete quiz."
+            );
+
+            // Session missing or expired: send teacher to login.
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+
+            button.disabled = false;
+            button.textContent = "Delete";
+            return;
+        }
+
+
+        alert(
+            data.message ||
+            "Quiz deleted successfully."
+        );
+
+
+        // Refresh the quiz list and upload dropdown.
+        await loadQuizzes();
+
+    } catch (error) {
+
+        console.error(
+            "Delete quiz error:",
+            error
+        );
+
+        alert(
+            "Unable to connect to the server."
+        );
+
+        button.disabled = false;
+        button.textContent = "Delete";
     }
 }
 
