@@ -90,6 +90,12 @@ async function login() {
 
         if (selectedRole === "teacher") {
 
+            // Token is needed for teacher-only actions (e.g. delete quiz).
+            localStorage.setItem(
+                "teacherToken",
+                data.token || ""
+            );
+
             localStorage.setItem(
                 "user",
                 JSON.stringify(data.teacher)
@@ -99,6 +105,8 @@ async function login() {
                 "teacher.html";
 
         } else {
+
+            localStorage.removeItem("teacherToken");
 
             localStorage.setItem(
                 "user",
